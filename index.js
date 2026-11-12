@@ -2,7 +2,6 @@ const { GridFSStorageService } = require('./utils/gridfs.utils');
 const { AWSS3StorageService } = require('./utils/awss3.utils');
 const { DiskStorageService } = require('./utils/disk.utils');
 const { GBlobStorageService } = require('./utils/gblob.utils');
-const { SFTPStorageService } = require('./utils/sftp.utils');
 const { AzureBlobStorageService } = require('./utils/azblob.utils');
 
 class StorageService {
@@ -19,6 +18,16 @@ class StorageService {
         } else if (storageType === 'gblob') {
             this.storageService = new GBlobStorageService(options);
         } else if (storageType === 'sftp') {
+            // Loaded only when needed: ssh2-sftp-client is an optional dependency.
+            let SFTPStorageService;
+            try {
+                ({ SFTPStorageService } = require('./utils/sftp.utils'));
+            } catch (err) {
+                if (err.code === 'MODULE_NOT_FOUND' && /ssh2-sftp-client/.test(err.message)) {
+                    throw new Error('SFTP storage requires the optional dependency ssh2-sftp-client, which is not installed');
+                }
+                throw err;
+            }
             this.storageService = new SFTPStorageService(options);
         } else if (storageType === 'azureblob') {
             this.storageService = new AzureBlobStorageService(options);
